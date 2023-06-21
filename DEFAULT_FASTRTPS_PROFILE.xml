@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+/// This file is used to make MATLAB do ROS2 communication over certain IP
+/// addresses. This way, it can communicate with the ROS2 installation in
+/// WSL or any other machine on the network.
+<profiles>
+    <participant profile_name="wsl2" is_default_profile="true">
+        <rtps>
+            <builtin>
+                <domainId>1</domainId>
+                 <initialPeersList>
+                     <locator>
+                         <kind>UDPv4</kind>
+                         <address>172.25.0.1</address> /// IP address of vEthernet adapter for WSL
+                     </locator>
+                 </initialPeersList>
+             </builtin>
+         </rtps>
+     </participant>
