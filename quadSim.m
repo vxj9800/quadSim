@@ -6,9 +6,10 @@ simNode = ros2node("quadSimNode",1);
 
 %% Create ROS2 publishers %%
 timePub = ros2TimedPub(simNode,"time","builtin_interfaces/Time",0.01);
-posPub = ros2TimedPub(simNode,"pos","geometry_msgs/Vector3",0.1);
-angVelPub = ros2TimedPub(simNode,"angVel","geometry_msgs/Vector3",0.01);
-linAccPub = ros2TimedPub(simNode,"linAcc","geometry_msgs/Vector3",0.01);
+posPub = ros2TimedPub(simNode,"gpsRaw","geometry_msgs/Vector3",0.1);
+attPub = ros2TimedPub(simNode,"imu/attitude","geometry_msgs/Vector3",0.01);
+angVelPub = ros2TimedPub(simNode,"imu/gyroRaw","geometry_msgs/Vector3",0.01);
+linAccPub = ros2TimedPub(simNode,"imu/acclRaw","geometry_msgs/Vector3",0.01);
 
 %% Convert everything into a struct %%
 params = v2struct();
@@ -16,8 +17,8 @@ params = v2struct();
 %% Initial Conditions %%
 % Coordinates
 q1_3 = [0; 0; 0];
-% e = [1; 0; 0; 0];
-e = eul2quat([0 -pi/10 pi/10])';
+e = [1; 0; 0; 0];
+% e = eul2quat([0 -pi/10 pi/10])';
 q4_7 = [7*pi/4; pi/4; 3*pi/4; 5*pi/4];
 q0 = [q1_3; e; q4_7];
 % Speeds
@@ -60,6 +61,12 @@ Q = ode5(@quadDer, [t t+dt], q, p);
 q = Q(end,:)';
 t = t + dt;
 
+% Correct for euler parameter drift
+q(4:7) = q(4:7)./norm(q(4:7));
+
+% Limit motor angles in 0-2pi range
+q(8:11) = mod(q(8:11),2*pi);
+
 % Publish the updated timestamp
 p.timePub.msg.sec = int32(floor(t));
 p.timePub.msg.nanosec = uint32((t - double(p.timePub.msg.sec))*1e9);
@@ -70,6 +77,13 @@ p.posPub.msg.x = q(1);
 p.posPub.msg.y = q(2);
 p.posPub.msg.z = q(3);
 p.posPub.send(t);
+
+% Publish attitude
+rpy = quat2eul(q(4:7)');
+p.attPub.msg.x = rpy(3);
+p.attPub.msg.y = rpy(2);
+p.attPub.msg.z = rpy(1);
+p.attPub.send(t);
 
 % Publish gyro data
 p.angVelPub.msg.x = q(15);

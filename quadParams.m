@@ -1,6 +1,6 @@
 %% Model Parameter Samples %%
 % Frame: https://speedyfpv.com/products/truexs-stretched-220mm-fpv-racing-drone-frame-kit-for-5-propellers?variant=39876517363885
-% Motors: https://betafpv.com/products/2204-brushless-motors
+% Motors: https://shop.iflight-rc.com/xing-2205-fpv-nextgen-motor-black-pro1521?search=2205
 % Battery: https://www.amazon.com/Socokin-Battery-3300mAh-Vehicles-Trucks/dp/B086GTSPQN/ref=sr_1_28?crid=21QGKY7B7764X&keywords=6s+lipo&qid=1686777293&sprefix=6s+lipo%2Caps%2C142&sr=8-28&ufe=app_do%3Aamzn1.fos.18630bbb-fcbb-42f8-9767-857e17e03685
 % Propellers: https://www.getfpv.com/lumenier-5x3-5-2-blade-propeller-set-of-4-green.html
 
@@ -11,7 +11,7 @@ pD = [-0.08; -0.08; 0.015]; % pD = [lD; wD; hD];
 pE = [0.08; -0.08; 0.015]; % pE = [lE; wE; hE];
 
 %% Mass and Inertia %%
-g = 9.81; % Gravitational Constant
+g = 9.8; % Gravitational Constant
 mA = 0.155 + 4*(0.021*0.9) + 0.5 + 0.1; % Frame + 4*Motor Stator + Battery + Circuit boards
 mB = (0.021*0.1) + 0.0028; % Motor rotor + Prop
 mC = (0.021*0.1) + 0.0028; % Motor rotor + Prop
@@ -41,8 +41,8 @@ D_I_DD = B_I_BB;
 E_I_EE = B_I_BB;
 
 %% Motor Properties %%
-Vllmax = 22.2; % Max line to line voltage for the motor
-motRll = 0.5; % Line to line resistance % Guess for the chosen motor
+Vllmax = 16.8; % Max line to line voltage for the motor
+motRll = 0.07241; % Line to line resistance
 motKv = 2400; % Kv rating of the motor, i.e. rpm/V
 
 %% Get propeller data and create a curvefit %%

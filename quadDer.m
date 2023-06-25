@@ -18,7 +18,8 @@ e = e./norm(e);
 ed = omega2edot(w,e);
 
 % Compute the thrust and torque from the propeller
-rho = 1; propVel = 0;
+rho = 1; % Add altitude dependent function here
+propVel = norm(u1_3)*sign(u1_3(3)); % Create a function to compute actual propeller velocity
 [th,tq] = propThTq(u4_7(1),rho,propVel,p); % Thrust and torque for motor B
 fB = th; tB = -tq;
 [th,tq] = propThTq(u4_7(2),rho,propVel,p); % Thrust and torque for motor C

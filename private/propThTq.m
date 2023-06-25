@@ -1,14 +1,14 @@
 function [th,tq] = propThTq(u,rho,propVel,p)
 % u = Angular velocity of the motor/propeller in rad/sec
-% rho = Density of the air.
+% rho = Density of the air in kg/m^3.
 % propVel = Translational velocity of the propeller in the direction of
-% the axis of rotation.
+% the axis of rotation in m/s.
 % p = Struct containing at-least following fields
 %   cThFitCoef = Curve fit parameters to convert advancement ratio (J) to
 %   thrust coefficient (C_T).
 %   cTqFitCoef = Curve fit parameters to convert advancement ratio (J) to
 %   torque coefficient (C_Q).
-%   propDia = Diameter of the propeller.
+%   propDia = Diameter of the propeller in m.
 
 % This function depends on the UIUC dataset. First, a second order
 % polynomial is fitted to the thrust coefficient and torque coefficient
@@ -31,7 +31,11 @@ end
 u = abs(u);
 
 % Calculate advancement ratio
-J = propVel / (u*radpsec2revpsec) / p.propDia;
+if propVel < 0
+    J = 0;
+else
+    J = propVel / (u*radpsec2revpsec) / p.propDia;
+end
 
 % Calculate thrust and torque coefficient from curve-fit coefficients
 % The coefficients should follow format given below
@@ -42,4 +46,8 @@ C_Q = J^2 * p.cTqFitCoef(1) + J * p.cTqFitCoef(2) + p.cTqFitCoef(3);
 % Calculate the thrust and the torque
 th = C_T * rho * (u*radpsec2revpsec)^2 * p.propDia^4;
 tq = C_Q * rho * (u*radpsec2revpsec)^2 * p.propDia^5;
+
+% Convert kgf unit to N unit
+th = th * p.g;
+tq = tq * p.g;
 end
