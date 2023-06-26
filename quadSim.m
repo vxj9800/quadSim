@@ -7,9 +7,9 @@ simNode = ros2node("quadSimNode",1);
 %% Create ROS2 publishers %%
 timePub = ros2TimedPub(simNode,"time","builtin_interfaces/Time",0.01);
 posPub = ros2TimedPub(simNode,"gpsRaw","geometry_msgs/Vector3",0.1);
-attPub = ros2TimedPub(simNode,"imu/attitude","geometry_msgs/Vector3",0.01);
-angVelPub = ros2TimedPub(simNode,"imu/gyroRaw","geometry_msgs/Vector3",0.01);
-linAccPub = ros2TimedPub(simNode,"imu/acclRaw","geometry_msgs/Vector3",0.01);
+attPub = ros2TimedPub(simNode,"imu/attitude","geometry_msgs/Vector3",0.001);
+angVelPub = ros2TimedPub(simNode,"imu/gyroRaw","geometry_msgs/Vector3",0.001);
+linAccPub = ros2TimedPub(simNode,"imu/acclRaw","geometry_msgs/Vector3",0.001);
 
 %% Convert everything into a struct %%
 params = v2struct();
@@ -52,12 +52,40 @@ if isempty(q)
 end
 
 % % Solve ODEs
-% [~,Q] = ode45(@quadDer, [t t+dt], q, [], p);
-% q = Q(end,:)';
-% t = t + dt;
+% [T,Q] = ode45(@quadDer, t:p.linAccPub.dt:t+dt, q, [], p);
 
 % Solve ODEs
-Q = ode5(@quadDer, [t t+dt], q, p);
+T = t:p.linAccPub.dt:t+dt;
+Q = ode5(@quadDer, T, q, p);
+
+% Publish IMU data
+for i = 2:length(T)
+    % Publish attitude
+    rpy = quat2eul(Q(i,4:7));
+    p.attPub.msg.x = rpy(3);
+    p.attPub.msg.y = rpy(2);
+    p.attPub.msg.z = rpy(1);
+    p.attPub.send(T(i));
+    
+    % Publish gyro data
+    p.angVelPub.msg.x = Q(i,15);
+    p.angVelPub.msg.y = Q(i,16);
+    p.angVelPub.msg.z = Q(i,17);
+    p.angVelPub.send(T(i));
+    
+    % Publish accelerometer data
+    dx = quadDer(T(i),Q(i,:)',p);
+    dx = dx(12:14);
+    dx = dx + [0; 0; -p.g];
+    R_NA = e2R(Q(i,4:7));
+    dx = R_NA'*dx;
+    p.linAccPub.msg.x = dx(1)/p.g;
+    p.linAccPub.msg.y = dx(2)/p.g;
+    p.linAccPub.msg.z = dx(3)/p.g;
+    p.linAccPub.send(T(i));
+end
+
+% Update the last state
 q = Q(end,:)';
 t = t + dt;
 
@@ -77,29 +105,6 @@ p.posPub.msg.x = q(1);
 p.posPub.msg.y = q(2);
 p.posPub.msg.z = q(3);
 p.posPub.send(t);
-
-% Publish attitude
-rpy = quat2eul(q(4:7)');
-p.attPub.msg.x = rpy(3);
-p.attPub.msg.y = rpy(2);
-p.attPub.msg.z = rpy(1);
-p.attPub.send(t);
-
-% Publish gyro data
-p.angVelPub.msg.x = q(15);
-p.angVelPub.msg.y = q(16);
-p.angVelPub.msg.z = q(17);
-p.angVelPub.send(t);
-
-% Publish accelerometer data
-dx = quadDer(t,q,p);
-dx = dx(12:14);
-R_NA = e2R(q(4:7));
-dx = R_NA'*dx;
-p.linAccPub.msg.x = dx(1)/p.g;
-p.linAccPub.msg.y = dx(2)/p.g;
-p.linAccPub.msg.z = dx(3)/p.g;
-p.linAccPub.send(t);
 
 % Generate animation frame
 persistent f % Figure handle
